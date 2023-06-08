@@ -22,15 +22,15 @@ class Objects:
         rospy.Service('specific_object', FindSpecificObject, self.specific_handler)
 
         self.listener = tf.TransformListener()
-        self.reference_frame = '/zed2_camera_center'
+        self.reference_frame = 'manip_base_link' # '/zed2i_camera_center'
 
         self._coordinates = ObjectPosition()
+        self._taken_object = ""
 
         rospy.loginfo("[Objects] Dear Operator, I'm ready to give you object coordinates")
 
-    def get_detected_objects(self, array): 
+    def get_detected_objects(self, array):
         #rospy.loginfo(array)
-        rospy.loginfo(array.detected_objects)
         if not len(array.detected_objects) == 0:
             self._objects.clear()
             for detection in array.detected_objects:
@@ -41,7 +41,6 @@ class Objects:
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
-            rospy.loginfo(obj_frame)
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
                     if target == '': # se não foi passado um tipo de objeto
@@ -84,6 +83,8 @@ class Objects:
                 if value < dist:
                     dist = value
                     self._obj = obj_id
+                    obj_string = obj_id.strip('/').split('/')[1]
+                    self._taken_object = obj_string
 
         elif condition == 'farthest':
             dist = 0.0
@@ -137,8 +138,8 @@ class Objects:
             succeeded = True
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
-        rospy.loginfo(self._positions)  
-        return self._coordinates
+        rospy.loginfo(self._positions)
+        return self._coordinates, self._taken_object
 
     def specific_handler(self, request):
         obj_class = request.type
@@ -146,7 +147,7 @@ class Objects:
 
         self.get_positions(obj_class) 
 
-        rospy.loginfo(self._specific[0])
+        #rospy.loginfo(self._specific[0])
 
         if self._specific is not None:
             x, y, z = self._specific[0]
@@ -160,7 +161,7 @@ class Objects:
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates
+        return self._coordinates, self._taken_object
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.INFO)
