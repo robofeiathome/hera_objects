@@ -6,7 +6,7 @@ import rospy
 import math
 import tf
 
-from hera_objects.msg import ObjectPosition, DicBoxes
+from hera_objects.msg import ObjectPosition, ObjectPositionArray, DicBoxes
 from hera_objects.srv import FindObject, FindSpecificObject
 
 class Objects:
@@ -23,9 +23,6 @@ class Objects:
 
         self.listener = tf.TransformListener()
         self.reference_frame = 'manip_base_link' # '/zed2i_camera_center'
-
-        self._coordinates = ObjectPosition()
-        self._taken_object = ""
 
         rospy.loginfo("[Objects] Dear Operator, I'm ready to give you object coordinates")
 
@@ -66,16 +63,14 @@ class Objects:
     def handler(self, request):
         condition = request.condition.lower()
         succeeded = False
-
-        self._coordinates.x = 0.0
-        self._coordinates.y = 0.0
-        self._coordinates.z = 0.0
-        self._coordinates.rx = 0.0
-        self._coordinates.ry = 0.0
-        self._coordinates.rz = 0.0
         self.get_positions()
 
+        self._coordinates = ObjectPositionArray()
+        self._taken_object = []
+
         if condition == 'closest':
+            rospy.loginfo("closest")
+            rospy.loginfo(self._positions)
             dist = float("inf")
             for obj_id in self._positions:
                 x, y, z = self._positions[obj_id]
@@ -83,59 +78,73 @@ class Objects:
                 if value < dist:
                     dist = value
                     self._obj = obj_id
+            
+            if self._obj is not None and self._obj in self._positions:
+                x, y, z = self._positions[self._obj]
+                obj_string = self._obj.strip('/').split('/')[1]
+                aux = ObjectPosition()
+                aux.x = x
+                aux.y = y
+                aux.z = z
+                aux.rx = 0.0
+                aux.ry = 0.0
+                aux.rz = math.atan2(y,x)
+                self._coordinates.objects_array.append(aux)
+                self._taken_object.append(obj_string)
+                succeeded = True
+
+            else:
+                aux = ObjectPosition()
+                aux.x = 0.0
+                aux.y = 0.0
+                aux.z = 0.0
+                aux.rx = 0.0
+                aux.ry = 0.0
+                aux.rz = 0.0
+                self._coordinates.objects_array.append(aux)
+                self._taken_object.append('')
+
+        elif condition == "all":
+            rospy.loginfo("all")
+            rospy.loginfo(self._positions)
+            for obj_id in self._positions:
+                x, y, z = self._positions[obj_id]
+                self._obj = obj_id
+
+                if self._obj is not None and self._obj in self._positions:
+                    x, y, z = self._positions[self._obj]
                     obj_string = obj_id.strip('/').split('/')[1]
-                    self._taken_object = obj_string
+                    aux = ObjectPosition()
+                    aux.x = x
+                    aux.y = y
+                    aux.z = z
+                    aux.rx = 0.0
+                    aux.ry = 0.0
+                    aux.rz = math.atan2(y,x)
+                    self._coordinates.objects_array.append(aux)
+                    self._taken_object.append(obj_string)
+                    succeeded = True
 
-        elif condition == 'farthest':
-            dist = 0.0
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
-                value = math.sqrt(x**2 + y**2 + z**2)
-                if value > dist:
-                    dist = value
-                    self._obj = obj_id
-
-        elif condition == 'rightmost':
-            rightmost = float('inf')
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
-                if y < rightmost:
-                    rightmost = y
-                    self._obj = obj_id
-
-        elif condition == 'leftmost':
-            leftmost = -float('inf')
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
-                if y > leftmost:
-                    leftmost = y
-                    self._obj = obj_id
-
-        elif condition == 'higher':
-            higher = -float('inf')
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
-                if z > higher:
-                    higher = z
-                    self._obj = obj_id
-
-        elif condition == 'lower':
-            lower = float('inf')
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
-                if z < lower:
-                    lower = z
-                    self._obj = obj_id
-
-        if self._obj is not None and self._obj in self._positions:
-            x, y, z = self._positions[self._obj]
-            self._coordinates.x = x
-            self._coordinates.y = y 
-            self._coordinates.z = z
-            self._coordinates.rx = 0.0
-            self._coordinates.ry = 0.0
-            self._coordinates.rz = math.atan2(y,x)
-            succeeded = True
+                else:
+                    aux = ObjectPosition()
+                    aux.x = 0.0
+                    aux.y = 0.0
+                    aux.z = 0.0
+                    aux.rx = 0.0
+                    aux.ry = 0.0
+                    aux.rz = 0.0
+                    self._coordinates.objects_array.append(aux)
+                    self._taken_object.append('')
+        else:
+            aux = ObjectPosition()
+            aux.x = 0.0
+            aux.y = 0.0
+            aux.z = 0.0
+            aux.rx = 0.0
+            aux.ry = 0.0
+            aux.rz = 0.0
+            self._coordinates.object_array.append(aux)
+            self._taken_object.append('')
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
         rospy.loginfo(self._positions)
