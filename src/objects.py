@@ -22,7 +22,7 @@ class Objects:
         rospy.Service('specific_object', FindSpecificObject, self.specific_handler)
 
         self.listener = tf.TransformListener()
-        self.reference_frame = 'manip_base_link' # '/zed2i_camera_center'
+        self.reference_frame = '/zed2i_left_camera_frame' # 'manip_base_link'
 
         rospy.loginfo("[Objects] Dear Operator, I'm ready to give you object coordinates")
 
@@ -65,7 +65,7 @@ class Objects:
         succeeded = False
         self.get_positions()
 
-        self._coordinates = ObjectPositionArray()
+        self._coordinates = []
         self._taken_object = []
 
         if condition == 'closest':
@@ -89,7 +89,7 @@ class Objects:
                 aux.rx = 0.0
                 aux.ry = 0.0
                 aux.rz = math.atan2(y,x)
-                self._coordinates.objects_array.append(aux)
+                self._coordinates.append(aux)
                 self._taken_object.append(obj_string)
                 succeeded = True
 
@@ -101,7 +101,7 @@ class Objects:
                 aux.rx = 0.0
                 aux.ry = 0.0
                 aux.rz = 0.0
-                self._coordinates.objects_array.append(aux)
+                self._coordinates.append(aux)
                 self._taken_object.append('')
 
         elif condition == "all":
@@ -121,7 +121,7 @@ class Objects:
                     aux.rx = 0.0
                     aux.ry = 0.0
                     aux.rz = math.atan2(y,x)
-                    self._coordinates.objects_array.append(aux)
+                    self._coordinates.append(aux)
                     self._taken_object.append(obj_string)
                     succeeded = True
 
@@ -133,7 +133,7 @@ class Objects:
                     aux.rx = 0.0
                     aux.ry = 0.0
                     aux.rz = 0.0
-                    self._coordinates.objects_array.append(aux)
+                    self._coordinates.append(aux)
                     self._taken_object.append('')
         else:
             aux = ObjectPosition()
@@ -143,7 +143,7 @@ class Objects:
             aux.rx = 0.0
             aux.ry = 0.0
             aux.rz = 0.0
-            self._coordinates.object_array.append(aux)
+            self._coordinates.append(aux)
             self._taken_object.append('')
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
