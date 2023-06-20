@@ -151,12 +151,18 @@ class Objects:
         return self._coordinates, self._taken_object
 
     def specific_handler(self, request):
-        obj_class = request.type
+        self._coordinates = ObjectPosition()
+        obj = request.type
         succeeded = False
 
-        self.get_positions(obj_class) 
-
+        #self.get_positions() 
         #rospy.loginfo(self._specific[0])
+
+        detected_obj = next((x for x in self.get_positions() if x['type'] == obj), None)
+
+        if detected_obj:
+            rospy.loginfo("object found")
+            self._specific = detected_obj
 
         if self._specific is not None:
             x, y, z = self._specific[0]
@@ -170,7 +176,7 @@ class Objects:
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates, self._taken_object
+        return self._coordinates
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.INFO)
