@@ -22,7 +22,7 @@ class Objects:
         rospy.Service('specific_object', FindSpecificObject, self.specific_handler)
 
         self.listener = tf.TransformListener()
-        self.reference_frame = '/zed2_camera_center'
+        self.reference_frame = '/manip_base_link'
 
         self._coordinates = ObjectPosition()
 
@@ -30,7 +30,6 @@ class Objects:
 
     def get_detected_objects(self, array): 
         #rospy.loginfo(array)
-        rospy.loginfo(array.detected_objects)
         if not len(array.detected_objects) == 0:
             self._objects.clear()
             for detection in array.detected_objects:
@@ -75,6 +74,7 @@ class Objects:
         self._coordinates.ry = 0.0
         self._coordinates.rz = 0.0
         self.get_positions()
+        print(self._positions)
 
         if condition == 'closest':
             dist = float("inf")
