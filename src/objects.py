@@ -13,7 +13,6 @@ class Objects:
 
     def __init__(self):
         self._objects = list()
-        self._specific = dict()
         self._positions = dict()
         self._obj = None
         rospy.Subscriber('/detector_2d_node/boxes_coordinates', DicBoxes, self.get_detected_objects)
@@ -151,12 +150,18 @@ class Objects:
         return self._coordinates, self._taken_object
 
     def specific_handler(self, request):
-        obj_class = request.type
+        self._coordinates = ObjectPosition()
+        obj = request.type
         succeeded = False
-
-        self.get_positions(obj_class) 
-
+ 
         #rospy.loginfo(self._specific[0])
+        self.get_positions()
+        
+        detected_obj = next((x for x in self._positions if x['type'] == obj), None)
+
+        if detected_obj:
+            rospy.loginfo("object found")
+            self._specific = detected_obj
 
         if self._specific is not None:
             x, y, z = self._specific[0]
@@ -168,9 +173,18 @@ class Objects:
             self._coordinates.rz = math.atan2(y,x)
             succeeded = True
 
+        else:
+            self._coordinates.x = 0.0
+            self._coordinates.y = 0.0
+            self._coordinates.z = 0.0
+            self._coordinates.rx = 0.0
+            self._coordinates.ry = 0.0
+            self._coordinates.rz = 0.0
+            succeeded = True
+
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates, self._taken_object
+        return self._coordinates
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.INFO)
