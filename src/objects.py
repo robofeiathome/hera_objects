@@ -22,7 +22,7 @@ class Objects:
         rospy.Service('specific_object', FindSpecificObject, self.specific_handler)
 
         self.listener = tf.TransformListener()
-        self.reference_frame = '/zed2_camera_center'
+        self.reference_frame = '/zed2i_left_camera_frame'
 
         self._coordinates = ObjectPosition()
 
@@ -30,7 +30,7 @@ class Objects:
 
     def get_detected_objects(self, array): 
         #rospy.loginfo(array)
-        rospy.loginfo(array.detected_objects)
+        #rospy.loginfo(array.detected_objects)
         if not len(array.detected_objects) == 0:
             self._objects.clear()
             for detection in array.detected_objects:
