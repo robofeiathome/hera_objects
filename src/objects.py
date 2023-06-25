@@ -27,6 +27,7 @@ class Objects:
 
     def get_detected_objects(self, array):
         #rospy.loginfo(array)
+        #rospy.loginfo(array.detected_objects)
         if not len(array.detected_objects) == 0:
             self._objects.clear()
             for detection in array.detected_objects:
