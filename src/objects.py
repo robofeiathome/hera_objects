@@ -21,7 +21,7 @@ class Objects:
         rospy.Service('specific_object', FindSpecificObject, self.specific_handler)
 
         self.listener = tf.TransformListener()
-        self.reference_frame = '/zed2i_left_camera_frame' # 'manip_base_link'
+        self.reference_frame = '/manip_base_link'
 
         rospy.loginfo("[Objects] Dear Operator, I'm ready to give you object coordinates")
 
@@ -41,7 +41,7 @@ class Objects:
                 try: # tenta obter a posição do objeto
                     if target == '': # se não foi passado um tipo de objeto
                         trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
-                        self._positions[obj_frame] = trans
+                        self._positions[obj_frame] = [trans, obj_class]
                     
                     elif obj_class == target:
                         trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
@@ -72,14 +72,14 @@ class Objects:
             rospy.loginfo(self._positions)
             dist = float("inf")
             for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
+                x, y, z = self._positions[obj_id][0]
                 value = math.sqrt(x**2 + y**2 + z**2)
                 if value < dist:
                     dist = value
                     self._obj = obj_id
             
             if self._obj is not None and self._obj in self._positions:
-                x, y, z = self._positions[self._obj]
+                x, y, z = self._positions[self._obj][0]
                 obj_string = self._obj.strip('/').split('/')[1]
                 aux = ObjectPosition()
                 aux.x = x
@@ -107,11 +107,11 @@ class Objects:
             rospy.loginfo("all")
             rospy.loginfo(self._positions)
             for obj_id in self._positions:
-                x, y, z = self._positions[obj_id]
+                x, y, z = self._positions[obj_id][0]
                 self._obj = obj_id
 
                 if self._obj is not None and self._obj in self._positions:
-                    x, y, z = self._positions[self._obj]
+                    x, y, z = self._positions[self._obj][0]
                     obj_string = obj_id.strip('/').split('/')[1]
                     aux = ObjectPosition()
                     aux.x = x
@@ -156,8 +156,13 @@ class Objects:
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
+        print(self._positions)
         
-        detected_obj = next((x for x in self._positions if x['type'] == obj), None)
+        for key, value in self._positions.items():
+            print(value)
+            if value[1] == obj:
+                detected_obj = value
+                break
 
         if detected_obj:
             rospy.loginfo("object found")
