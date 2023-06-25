@@ -10,55 +10,43 @@ from hera_objects.msg import ObjectPosition, ObjectPositionArray, DicBoxes
 from hera_objects.srv import FindObject, FindSpecificObject
 
 class Objects:
-
     def __init__(self):
         self._objects = list()
-        self._specific = dict()
         self._positions = dict()
-        self._obj = None
+        self._specific = dict()
         rospy.Subscriber('/detector_2d_node/boxes_coordinates', DicBoxes, self.get_detected_objects)
-
         rospy.Service('objects', FindObject, self.handler)
         rospy.Service('specific_object', FindSpecificObject, self.specific_handler)
-
         self.listener = tf.TransformListener()
         self.reference_frame = '/zed2i_left_camera_frame' # 'manip_base_link'
-
         rospy.loginfo("[Objects] Dear Operator, I'm ready to give you object coordinates")
 
     def get_detected_objects(self, array):
-        #rospy.loginfo(array)
         if not len(array.detected_objects) == 0:
             self._objects.clear()
             for detection in array.detected_objects:
                 self._objects.append((detection.type.data, detection.tf_id.data)) # adiciona um novo objeto a lista de objetos
 
-
     def get_positions(self, target = ''):
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
+        objects_positions = []
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
+                    trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
+                    object_position = {'type': obj_class, 'frame': obj_frame, 'position': trans}
+                    objects_positions.append(object_position)
                     if target == '': # se não foi passado um tipo de objeto
-                        trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
                         self._positions[obj_frame] = trans
-                    
                     elif obj_class == target:
-                        trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
                         self._positions[obj_frame] = trans
                         self._specific[0] = trans
-
                 except Exception as e:
                     rospy.loginfo("[Objects] vish!")
                     print(e)
                     self._specific = {0: [0.0, 0.0, 0.0]}
-            else:
-                # retorna as posicoes zeradas
-                self._objects.clear()
-                self._positions[obj_frame] = [0.0, 0.0, 0.0]
-                self._obj = None
-                self._specific = {0: [0.0, 0.0, 0.0]}
+        return objects_positions
 
     def handler(self, request):
         condition = request.condition.lower()
