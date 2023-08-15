@@ -1,3 +1,4 @@
 string condition
 ---
-ObjectPosition position
+ObjectPosition[] position
+string[] taken_object

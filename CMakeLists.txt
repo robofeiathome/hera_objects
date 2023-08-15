@@ -56,6 +56,7 @@ add_message_files(
    DicBoxes.msg
    CoordBoxes.msg
    ObjectPosition.msg
+   ObjectPositionArray.msg
 )
 
 ## Generate services in the 'srv' folder

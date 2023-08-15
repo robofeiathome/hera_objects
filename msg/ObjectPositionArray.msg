@@ -1,0 +1,1 @@
+hera_objects/ObjectPosition[] objects_array
