@@ -22,7 +22,6 @@ class Objects:
 
         self.listener = tf.TransformListener()
         self.reference_frame = '/manip_base_link'
-
         rospy.loginfo("[Objects] Dear Operator, I'm ready to give you object coordinates")
 
     def get_detected_objects(self, array):
@@ -64,6 +63,7 @@ class Objects:
         condition = request.condition.lower()
         succeeded = False
         self.get_positions()
+        print(self._positions)
 
         self._coordinates = []
         self._taken_object = []
