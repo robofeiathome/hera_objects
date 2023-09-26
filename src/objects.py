@@ -33,20 +33,17 @@ class Objects:
                 self._objects.append((detection.type.data, detection.tf_id.data)) # adiciona um novo objeto a lista de objetos
 
 
-    def get_positions(self, target = ''):
+    def get_positions(self, reference=None):
+        if reference is None:
+            reference = self.reference_frame
+        print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
-                    if target == '': # se não foi passado um tipo de objeto
-                        trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
-                        self._positions[obj_frame] = [trans, obj_class]
-                    
-                    elif obj_class == target:
-                        trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
-                        self._positions[obj_frame] = trans
-                        self._specific[0] = trans
+                    trans, a = self.listener.lookupTransform(reference, obj_frame, rospy.Time(0))
+                    self._positions[obj_frame] = [trans, obj_class]
 
                 except Exception as e:
                     rospy.loginfo("[Objects] vish!")
@@ -62,7 +59,7 @@ class Objects:
     def handler(self, request):
         condition = request.condition.lower()
         succeeded = False
-        self.get_positions()
+        self.get_positions(request.reference)
         print(self._positions)
 
         self._coordinates = []
@@ -149,7 +146,7 @@ class Objects:
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
         rospy.loginfo(self._positions)
         return self._coordinates, self._taken_object
-
+    
     def specific_handler(self, request):
         self._coordinates = ObjectPosition()
         obj = request.type

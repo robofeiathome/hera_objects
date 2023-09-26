@@ -1,4 +1,5 @@
 string condition
+string reference
 ---
 ObjectPosition[] position
 string[] taken_object
