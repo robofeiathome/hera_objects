@@ -32,9 +32,8 @@ class Objects:
             for detection in array.detected_objects:
                 self._objects.append((detection.type.data, detection.tf_id.data)) # adiciona um novo objeto a lista de objetos
 
-
     def get_positions(self, reference=None):
-        if reference is None:
+        if reference is None or reference == "":
             reference = self.reference_frame
         print(reference)
         self._positions.clear()
@@ -42,7 +41,7 @@ class Objects:
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
-                    trans, a = self.listener.lookupTransform(reference, obj_frame, rospy.Time(0))
+                    trans, a = self.listener.lookupTransform(reference, obj_frame, rospy.Time.now())
                     self._positions[obj_frame] = [trans, obj_class]
 
                 except Exception as e:
@@ -151,14 +150,16 @@ class Objects:
         self._coordinates = ObjectPosition()
         obj = request.type
         succeeded = False
+        detected_obj = None
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
         print(self._positions)
         
         for key, value in self._positions.items():
-            print(value)
-            if value[1] == obj:
+            print("value:", value[1])
+            print("obj", obj)
+            if value[1] == obj[:-1]:
                 detected_obj = value
                 break
 
@@ -190,7 +191,7 @@ class Objects:
         return self._coordinates
 
 if __name__ == '__main__':
-    rospy.init_node('objects', log_level=rospy.INFO)
+    rospy.init_node('objects', log_level=rospy.ERROR)
     Objects()
 
     try:
