@@ -41,7 +41,7 @@ class Objects:
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
-                    trans, a = self.listener.lookupTransform(reference, obj_frame, rospy.Time.now())
+                    trans, a = self.listener.lookupTransform(reference, obj_frame, rospy.Time(0))
                     self._positions[obj_frame] = [trans, obj_class]
 
                 except Exception as e:
