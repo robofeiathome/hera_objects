@@ -60,20 +60,40 @@ class Objects:
         succeeded = False
         self.get_positions(request.reference)
         print(self._positions)
+        print(request.upper_limit)
+        print(request.lower_limit)
 
         self._coordinates = []
         self._taken_object = []
 
         if condition == 'closest':
-            rospy.loginfo("closest")
-            rospy.loginfo(self._positions)
-            dist = float("inf")
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id][0]
-                value = math.sqrt(x**2 + y**2 + z**2)
-                if value < dist:
-                    dist = value
-                    self._obj = obj_id
+            if request.upper_limit != 0.0 or request.lower_limit != 0.0:
+                rospy.loginfo("closest with limits")
+                rospy.loginfo(self._positions)
+                dist = float("inf")
+                for obj_id in self._positions:
+                    print(obj_id)
+                    x, y, z = self._positions[obj_id][0]
+                    trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
+                    print(f"map a = {trans}")
+                    if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
+                        value = math.sqrt(x**2 + y**2 + z**2)
+                        if value < dist:
+                            dist = value
+                            self._obj = obj_id
+                    else:
+                        continue
+            else:
+                rospy.loginfo("closest")
+                rospy.loginfo(self._positions)
+                dist = float("inf")
+                for obj_id in self._positions:
+                    print(obj_id)
+                    x, y, z = self._positions[obj_id][0]
+                    value = math.sqrt(x**2 + y**2 + z**2)
+                    if value < dist:
+                        dist = value
+                        self._obj = obj_id
             
             if self._obj is not None and self._obj in self._positions:
                 x, y, z = self._positions[self._obj][0]
