@@ -32,21 +32,17 @@ class Objects:
             for detection in array.detected_objects:
                 self._objects.append((detection.type.data, detection.tf_id.data)) # adiciona um novo objeto a lista de objetos
 
-
-    def get_positions(self, target = ''):
+    def get_positions(self, reference=None):
+        if reference is None or reference == "":
+            reference = self.reference_frame
+        print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
-                    if target == '': # se não foi passado um tipo de objeto
-                        trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
-                        self._positions[obj_frame] = [trans, obj_class]
-                    
-                    elif obj_class == target:
-                        trans, a = self.listener.lookupTransform(self.reference_frame, obj_frame, rospy.Time(0))
-                        self._positions[obj_frame] = trans
-                        self._specific[0] = trans
+                    trans, a = self.listener.lookupTransform(reference, obj_frame, rospy.Time(0))
+                    self._positions[obj_frame] = [trans, obj_class]
 
                 except Exception as e:
                     rospy.loginfo("[Objects] vish!")
@@ -62,22 +58,42 @@ class Objects:
     def handler(self, request):
         condition = request.condition.lower()
         succeeded = False
-        self.get_positions()
+        self.get_positions(request.reference)
         print(self._positions)
+        print(request.upper_limit)
+        print(request.lower_limit)
 
         self._coordinates = []
         self._taken_object = []
 
         if condition == 'closest':
-            rospy.loginfo("closest")
-            rospy.loginfo(self._positions)
-            dist = float("inf")
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id][0]
-                value = math.sqrt(x**2 + y**2 + z**2)
-                if value < dist:
-                    dist = value
-                    self._obj = obj_id
+            if request.upper_limit != 0.0 or request.lower_limit != 0.0:
+                rospy.loginfo("closest with limits")
+                rospy.loginfo(self._positions)
+                dist = float("inf")
+                for obj_id in self._positions:
+                    print(obj_id)
+                    x, y, z = self._positions[obj_id][0]
+                    trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
+                    print(f"map a = {trans}")
+                    if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
+                        value = math.sqrt(x**2 + y**2 + z**2)
+                        if value < dist:
+                            dist = value
+                            self._obj = obj_id
+                    else:
+                        continue
+            else:
+                rospy.loginfo("closest")
+                rospy.loginfo(self._positions)
+                dist = float("inf")
+                for obj_id in self._positions:
+                    print(obj_id)
+                    x, y, z = self._positions[obj_id][0]
+                    value = math.sqrt(x**2 + y**2 + z**2)
+                    if value < dist:
+                        dist = value
+                        self._obj = obj_id
             
             if self._obj is not None and self._obj in self._positions:
                 x, y, z = self._positions[self._obj][0]
@@ -149,19 +165,21 @@ class Objects:
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
         rospy.loginfo(self._positions)
         return self._coordinates, self._taken_object
-
+    
     def specific_handler(self, request):
         self._coordinates = ObjectPosition()
         obj = request.type
         succeeded = False
+        detected_obj = None
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
         print(self._positions)
         
         for key, value in self._positions.items():
-            print(value)
-            if value[1] == obj:
+            print("value:", value[1])
+            print("obj", obj)
+            if value[1] == obj[:-1]:
                 detected_obj = value
                 break
 
@@ -193,7 +211,7 @@ class Objects:
         return self._coordinates
 
 if __name__ == '__main__':
-    rospy.init_node('objects', log_level=rospy.INFO)
+    rospy.init_node('objects', log_level=rospy.ERROR)
     Objects()
 
     try:

@@ -1,4 +1,7 @@
 string condition
+string reference
+float64 upper_limit
+float64 lower_limit
 ---
 ObjectPosition[] position
 string[] taken_object
