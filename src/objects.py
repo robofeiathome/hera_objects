@@ -139,9 +139,10 @@ class Objects:
                     aux.rx = 0.0
                     aux.ry = 0.0
                     aux.rz = math.atan2(y,x)
-                    self._coordinates.append(aux)
-                    self._taken_object.append(obj_string)
-                    succeeded = True
+                    if y > request.lower_limit and y < request.upper_limit:
+                        self._coordinates.append(aux)
+                        self._taken_object.append(obj_string)
+                        succeeded = True
 
                 else:
                     aux = ObjectPosition()
