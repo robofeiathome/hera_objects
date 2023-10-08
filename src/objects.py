@@ -77,7 +77,9 @@ class Objects:
                     trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
                     print(f"map a = {trans}")
                     if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
-                        if obj_id[:-1] in request.exclude:
+                        print(obj_id[:-1])
+                        print(request.exclude)
+                        if obj_id.strip('/').split('/')[1][:-1] in request.exclude:
                             continue
                         value = math.sqrt(x**2 + y**2 + z**2)
                         if value < dist:
