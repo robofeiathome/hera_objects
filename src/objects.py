@@ -125,37 +125,72 @@ class Objects:
                 self._taken_object.append('')
 
         elif condition == "all":
-            rospy.loginfo("all")
-            rospy.loginfo(self._positions)
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id][0]
-                self._obj = obj_id
+            if request.upper_limit != 0.0 or request.lower_limit != 0.0:
+                rospy.loginfo("all")
+                rospy.loginfo(self._positions)
+                for obj_id in self._positions:
+                    x, y, z = self._positions[obj_id][0]
+                    trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
+                    self._obj = obj_id
 
-                if self._obj is not None and self._obj in self._positions:
-                    x, y, z = self._positions[self._obj][0]
-                    obj_string = obj_id.strip('/').split('/')[1]
-                    aux = ObjectPosition()
-                    aux.x = x
-                    aux.y = y
-                    aux.z = z
-                    aux.rx = 0.0
-                    aux.ry = 0.0
-                    aux.rz = math.atan2(y,x)
-                    if y > request.lower_limit and y < request.upper_limit:
+                    if self._obj is not None and self._obj in self._positions:
+                        x, y, z = self._positions[self._obj][0]
+                        obj_string = obj_id.strip('/').split('/')[1]
+                        aux = ObjectPosition()
+                        aux.x = x
+                        aux.y = y
+                        aux.z = z
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = math.atan2(y,x)
+                        if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
+                            self._coordinates.append(aux)
+                            self._taken_object.append(obj_string)
+                            succeeded = True
+
+                    else:
+                        aux = ObjectPosition()
+                        aux.x = 0.0
+                        aux.y = 0.0
+                        aux.z = 0.0
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = 0.0
+                        self._coordinates.append(aux)
+                        self._taken_object.append('')
+            else:
+                rospy.loginfo("all")
+                rospy.loginfo(self._positions)
+                for obj_id in self._positions:
+                    x, y, z = self._positions[obj_id][0]
+                    self._obj = obj_id
+
+                    if self._obj is not None and self._obj in self._positions:
+                        x, y, z = self._positions[self._obj][0]
+                        obj_string = obj_id.strip('/').split('/')[1]
+                        aux = ObjectPosition()
+                        aux.x = x
+                        aux.y = y
+                        aux.z = z
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = math.atan2(y,x)
+
                         self._coordinates.append(aux)
                         self._taken_object.append(obj_string)
                         succeeded = True
 
-                else:
-                    aux = ObjectPosition()
-                    aux.x = 0.0
-                    aux.y = 0.0
-                    aux.z = 0.0
-                    aux.rx = 0.0
-                    aux.ry = 0.0
-                    aux.rz = 0.0
-                    self._coordinates.append(aux)
-                    self._taken_object.append('')
+                    else:
+                        aux = ObjectPosition()
+                        aux.x = 0.0
+                        aux.y = 0.0
+                        aux.z = 0.0
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = 0.0
+                        self._coordinates.append(aux)
+                        self._taken_object.append('')
+
         else:
             aux = ObjectPosition()
             aux.x = 0.0
