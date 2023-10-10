@@ -77,6 +77,10 @@ class Objects:
                     trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
                     print(f"map a = {trans}")
                     if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
+                        print(obj_id[:-1])
+                        print(request.exclude)
+                        if obj_id.strip('/').split('/')[1][:-1] in request.exclude:
+                            continue
                         value = math.sqrt(x**2 + y**2 + z**2)
                         if value < dist:
                             dist = value
@@ -137,9 +141,10 @@ class Objects:
                     aux.rx = 0.0
                     aux.ry = 0.0
                     aux.rz = math.atan2(y,x)
-                    self._coordinates.append(aux)
-                    self._taken_object.append(obj_string)
-                    succeeded = True
+                    if y > request.lower_limit and y < request.upper_limit:
+                        self._coordinates.append(aux)
+                        self._taken_object.append(obj_string)
+                        succeeded = True
 
                 else:
                     aux = ObjectPosition()
@@ -169,9 +174,8 @@ class Objects:
     def specific_handler(self, request):
         self._coordinates = ObjectPosition()
         obj = request.type
-        condition = request.condition.lower()
         succeeded = False
-        detected_obj = []
+        detected_obj = None
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
@@ -181,45 +185,22 @@ class Objects:
             print("value:", value[1])
             print("obj", obj)
             if value[1] == obj[:-1]:
-                detected_obj.append(value)
+                detected_obj = value
                 break
-        
-        if condition == '':
-            if detected_obj:
-                rospy.loginfo("object found")
-                self._specific = detected_obj[0]
 
-        elif condition == 'right':
-            rospy.loginfo("rightmost")
-            rospy.loginfo(detected_obj)
-
-            rightmost = float('inf')
-            for obj_id in detected_obj:
-                x, y, z = detected_obj[obj_id][0]
-                if y < rightmost:
-                    rightmost = y
-                    self._specific = obj_id
-        
-        elif condition == 'left':
-            rospy.loginfo("rightmost")
-            rospy.loginfo(detected_obj)
-
-            leftmost = -float('inf')
-            for obj_id in detected_obj:
-                x, y, z = detected_obj[obj_id][0]
-                if y > leftmost:
-                    leftmost = y
-                    self._specific = obj_id
+        if detected_obj:
+            rospy.loginfo("object found")
+            self._specific = detected_obj
 
         if self._specific is not None:
-                x, y, z = self._specific[0]
-                self._coordinates.x = x
-                self._coordinates.y = y
-                self._coordinates.z = z
-                self._coordinates.rx = 0.0
-                self._coordinates.ry = 0.0
-                self._coordinates.rz = math.atan2(y,x)
-                succeeded = True
+            x, y, z = self._specific[0]
+            self._coordinates.x = x
+            self._coordinates.y = y
+            self._coordinates.z = z
+            self._coordinates.rx = 0.0
+            self._coordinates.ry = 0.0
+            self._coordinates.rz = math.atan2(y,x)
+            succeeded = True
 
         else:
             self._coordinates.x = 0.0
