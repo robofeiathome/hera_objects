@@ -38,6 +38,7 @@ class Objects:
         print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
+        self._specific_name = ""
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
@@ -213,6 +214,7 @@ class Objects:
 
         if self._specific is not None:
             x, y, z = self._specific[0]
+            self._specific_name = self._specific[1]
             self._coordinates.x = x
             self._coordinates.y = y
             self._coordinates.z = z
@@ -232,7 +234,7 @@ class Objects:
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates
+        return self._coordinates, self._specific_name
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.ERROR)
