@@ -182,7 +182,6 @@ class Objects:
             print("obj", obj)
             if value[1] == obj[:-1]:
                 detected_obj.append(value)
-                break
 
         if condition == '':
             if detected_obj:
@@ -195,7 +194,7 @@ class Objects:
 
             rightmost = float('inf')
             for obj_id in detected_obj:
-                x, y, z = detected_obj[obj_id][0]
+                x, y, z = obj_id[0]
                 if y < rightmost:
                     rightmost = y
                     self._specific = obj_id
@@ -206,7 +205,7 @@ class Objects:
 
             leftmost = -float('inf')
             for obj_id in detected_obj:
-                x, y, z = detected_obj[obj_id][0]
+                x, y, z = obj_id[0]0
                 if y > leftmost:
                     leftmost = y
                     self._specific = obj_id
