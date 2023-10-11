@@ -38,7 +38,7 @@ class Objects:
         print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
-        self._specific_name = ""
+        self.obj_tf_id = ""
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
@@ -179,10 +179,10 @@ class Objects:
         print(self._positions)
         
         for key, value in self._positions.items():
-            print("value:", value[1])
+            print("value:", value)
             print("obj", obj)
             if value[1] == obj[:-1]:
-                detected_obj.append(value)
+                detected_obj.append((value[0], key.strip('/').split('/')[1]))
 
         if condition == '':
             if detected_obj:
@@ -206,7 +206,7 @@ class Objects:
 
             leftmost = -float('inf')
             for obj_id in detected_obj:
-                x, y, z = obj_id[0]0
+                x, y, z = obj_id[0]
                 if y > leftmost:
                     leftmost = y
                     self._specific = obj_id
