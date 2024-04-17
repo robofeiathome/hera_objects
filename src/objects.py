@@ -38,6 +38,7 @@ class Objects:
         print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
+        self.obj_tf_id = ""
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
@@ -209,26 +210,51 @@ class Objects:
     def specific_handler(self, request):
         self._coordinates = ObjectPosition()
         obj = request.type
+        condition = request.condition.lower()
         succeeded = False
-        detected_obj = None
+        detected_obj = []
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
         print(self._positions)
         
         for key, value in self._positions.items():
-            print("value:", value[1])
+            print("value:", value)
             print("obj", obj)
             if value[1] == obj[:-1]:
-                detected_obj = value
-                break
+                detected_obj.append((value[0], key.strip('/').split('/')[1]))
 
-        if detected_obj:
-            rospy.loginfo("object found")
-            self._specific = detected_obj
+        if condition == '':
+            if detected_obj:
+                rospy.loginfo("object found")
+                self._specific = detected_obj[0]
+
+        elif condition == 'right':
+            rospy.loginfo("rightmost")
+            rospy.loginfo(detected_obj)
+
+            rightmost = float('inf')
+            for obj_id in detected_obj:
+                x, y, z = obj_id[0]
+                if y < rightmost:
+                    rightmost = y
+                    self._specific = obj_id
+
+        elif condition == 'left':
+            rospy.loginfo("leftmost")
+            rospy.loginfo(detected_obj)
+
+            leftmost = -float('inf')
+            for obj_id in detected_obj:
+                x, y, z = obj_id[0]
+                if y > leftmost:
+                    leftmost = y
+                    self._specific = obj_id
+
 
         if self._specific is not None:
             x, y, z = self._specific[0]
+            self._specific_name = self._specific[1]
             self._coordinates.x = x
             self._coordinates.y = y
             self._coordinates.z = z
@@ -248,7 +274,7 @@ class Objects:
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates
+        return self._coordinates, self._specific_name
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.ERROR)
