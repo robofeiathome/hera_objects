@@ -1,3 +1,5 @@
 string type
+string condition
 ---
 ObjectPosition position
+string tf_id

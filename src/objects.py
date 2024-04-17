@@ -38,6 +38,7 @@ class Objects:
         print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
+        self.obj_tf_id = ""
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
             if not obj_frame == '': # se o frame do objeto não for vazio
                 try: # tenta obter a posição do objeto
@@ -77,6 +78,10 @@ class Objects:
                     trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
                     print(f"map a = {trans}")
                     if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
+                        print(obj_id[:-1])
+                        print(request.exclude)
+                        if obj_id.strip('/').split('/')[1][:-1] in request.exclude:
+                            continue
                         value = math.sqrt(x**2 + y**2 + z**2)
                         if value < dist:
                             dist = value
@@ -121,36 +126,72 @@ class Objects:
                 self._taken_object.append('')
 
         elif condition == "all":
-            rospy.loginfo("all")
-            rospy.loginfo(self._positions)
-            for obj_id in self._positions:
-                x, y, z = self._positions[obj_id][0]
-                self._obj = obj_id
+            if request.upper_limit != 0.0 or request.lower_limit != 0.0:
+                rospy.loginfo("all")
+                rospy.loginfo(self._positions)
+                for obj_id in self._positions:
+                    x, y, z = self._positions[obj_id][0]
+                    trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
+                    self._obj = obj_id
 
-                if self._obj is not None and self._obj in self._positions:
-                    x, y, z = self._positions[self._obj][0]
-                    obj_string = obj_id.strip('/').split('/')[1]
-                    aux = ObjectPosition()
-                    aux.x = x
-                    aux.y = y
-                    aux.z = z
-                    aux.rx = 0.0
-                    aux.ry = 0.0
-                    aux.rz = math.atan2(y,x)
-                    self._coordinates.append(aux)
-                    self._taken_object.append(obj_string)
-                    succeeded = True
+                    if self._obj is not None and self._obj in self._positions:
+                        x, y, z = self._positions[self._obj][0]
+                        obj_string = obj_id.strip('/').split('/')[1]
+                        aux = ObjectPosition()
+                        aux.x = x
+                        aux.y = y
+                        aux.z = z
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = math.atan2(y,x)
+                        if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
+                            self._coordinates.append(aux)
+                            self._taken_object.append(obj_string)
+                            succeeded = True
 
-                else:
-                    aux = ObjectPosition()
-                    aux.x = 0.0
-                    aux.y = 0.0
-                    aux.z = 0.0
-                    aux.rx = 0.0
-                    aux.ry = 0.0
-                    aux.rz = 0.0
-                    self._coordinates.append(aux)
-                    self._taken_object.append('')
+                    else:
+                        aux = ObjectPosition()
+                        aux.x = 0.0
+                        aux.y = 0.0
+                        aux.z = 0.0
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = 0.0
+                        self._coordinates.append(aux)
+                        self._taken_object.append('')
+            else:
+                rospy.loginfo("all")
+                rospy.loginfo(self._positions)
+                for obj_id in self._positions:
+                    x, y, z = self._positions[obj_id][0]
+                    self._obj = obj_id
+
+                    if self._obj is not None and self._obj in self._positions:
+                        x, y, z = self._positions[self._obj][0]
+                        obj_string = obj_id.strip('/').split('/')[1]
+                        aux = ObjectPosition()
+                        aux.x = x
+                        aux.y = y
+                        aux.z = z
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = math.atan2(y,x)
+
+                        self._coordinates.append(aux)
+                        self._taken_object.append(obj_string)
+                        succeeded = True
+
+                    else:
+                        aux = ObjectPosition()
+                        aux.x = 0.0
+                        aux.y = 0.0
+                        aux.z = 0.0
+                        aux.rx = 0.0
+                        aux.ry = 0.0
+                        aux.rz = 0.0
+                        self._coordinates.append(aux)
+                        self._taken_object.append('')
+
         else:
             aux = ObjectPosition()
             aux.x = 0.0
@@ -169,26 +210,51 @@ class Objects:
     def specific_handler(self, request):
         self._coordinates = ObjectPosition()
         obj = request.type
+        condition = request.condition.lower()
         succeeded = False
-        detected_obj = None
+        detected_obj = []
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
         print(self._positions)
         
         for key, value in self._positions.items():
-            print("value:", value[1])
+            print("value:", value)
             print("obj", obj)
             if value[1] == obj[:-1]:
-                detected_obj = value
-                break
+                detected_obj.append((value[0], key.strip('/').split('/')[1]))
 
-        if detected_obj:
-            rospy.loginfo("object found")
-            self._specific = detected_obj
+        if condition == '':
+            if detected_obj:
+                rospy.loginfo("object found")
+                self._specific = detected_obj[0]
+
+        elif condition == 'right':
+            rospy.loginfo("rightmost")
+            rospy.loginfo(detected_obj)
+
+            rightmost = float('inf')
+            for obj_id in detected_obj:
+                x, y, z = obj_id[0]
+                if y < rightmost:
+                    rightmost = y
+                    self._specific = obj_id
+
+        elif condition == 'left':
+            rospy.loginfo("leftmost")
+            rospy.loginfo(detected_obj)
+
+            leftmost = -float('inf')
+            for obj_id in detected_obj:
+                x, y, z = obj_id[0]
+                if y > leftmost:
+                    leftmost = y
+                    self._specific = obj_id
+
 
         if self._specific is not None:
             x, y, z = self._specific[0]
+            self._specific_name = self._specific[1]
             self._coordinates.x = x
             self._coordinates.y = y
             self._coordinates.z = z
@@ -208,7 +274,7 @@ class Objects:
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates
+        return self._coordinates, self._specific_name
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.ERROR)
