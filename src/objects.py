@@ -78,7 +78,7 @@ class Objects:
                     print(f"map a = {trans}")
                     if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
                         print(request.exclude)
-                        if obj_id.strip('/').split('/')[1] in request.exclude:
+                        if obj_id.strip('/').split('/')[1][:-1] in request.exclude:
                             continue
 
                         value = math.sqrt(x**2 + y**2 + z**2)
