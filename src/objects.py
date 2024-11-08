@@ -35,7 +35,7 @@ class Objects:
     def get_positions(self, reference=None):
         if reference is None or reference == "":
             reference = self.reference_frame
-        print(reference)
+        #print(reference)
         self._positions.clear()
         self._specific = {0: [0.0, 0.0, 0.0]}
         for obj_class, obj_frame in self._objects: # para cada objeto da lista de objetos
@@ -46,7 +46,7 @@ class Objects:
 
                 except Exception as e:
                     rospy.loginfo("[Objects] vish!")
-                    print(e)
+                    #print(e)
                     self._specific = {0: [0.0, 0.0, 0.0]}
             else:
                 # retorna as posicoes zeradas
@@ -59,9 +59,9 @@ class Objects:
         condition = request.condition.lower()
         succeeded = False
         self.get_positions(request.reference)
-        print(self._positions)
-        print(request.upper_limit)
-        print(request.lower_limit)
+        #print(self._positions)
+        #print(request.upper_limit)
+        #print(request.lower_limit)
 
         self._coordinates = []
         self._taken_object = []
@@ -72,13 +72,13 @@ class Objects:
                 rospy.loginfo(self._positions)
                 dist = float("inf")
                 for obj_id in self._positions:
-                    print(obj_id)
+                    #print(obj_id)
                     x, y, z = self._positions[obj_id][0]
                     trans, a = self.listener.lookupTransform("map", obj_id, rospy.Time(0))
-                    print(f"map a = {trans}")
+                    #print(f"map a = {trans}")
                     if trans[2] > request.lower_limit and trans[2] < request.upper_limit:
-                        print(request.exclude)
-                        if obj_id.strip('/').split('/')[1] in request.exclude:
+                        print(request.exclude,obj_id.strip('/').split('/')[1][:-1] )
+                        if obj_id.strip('/').split('/')[1][:-1] in request.exclude:
                             continue
 
                         value = math.sqrt(x**2 + y**2 + z**2)
@@ -92,7 +92,7 @@ class Objects:
                 rospy.loginfo(self._positions)
                 dist = float("inf")
                 for obj_id in self._positions:
-                    print(obj_id)
+                    #print(obj_id)
                     x, y, z = self._positions[obj_id][0]
                     value = math.sqrt(x**2 + y**2 + z**2)
                     if value < dist:
@@ -123,6 +123,7 @@ class Objects:
                 aux.rz = 0.0
                 self._coordinates.append(aux)
                 self._taken_object.append('')
+
 
         elif condition == "all":
             rospy.loginfo("all")
@@ -178,11 +179,11 @@ class Objects:
  
         #rospy.loginfo(self._specific[0])
         self.get_positions()
-        print(self._positions)
+        #print(self._positions)
         
         for key, value in self._positions.items():
-            print("value:", value[1])
-            print("obj", obj)
+            #print("value:", value[1])
+            #print("obj", obj)
             if value[1] == obj[:-1]:
                 detected_obj = value
                 break
@@ -212,7 +213,7 @@ class Objects:
 
         rospy.loginfo('Found the coordinates!') if succeeded else rospy.loginfo("I'm a shame. Sorry!")
 
-        return self._coordinates
+        return self._coordinates,"x"
 
 if __name__ == '__main__':
     rospy.init_node('objects', log_level=rospy.ERROR)
